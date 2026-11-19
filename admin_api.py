@@ -124,8 +124,8 @@ def handle_post(handler):
             SESSIONS.pop(cookie["expressarte_session"].value, None)
         send_json(handler, 200, {"ok": True}, "expressarte_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0")
         return True
-    if not session_email(handler):
-        send_json(handler, 401, {"error": "Entre como administrador para usar a análise por IA."})
+    if not session_email(handler) and not data.get("key"):
+        send_json(handler, 401, {"error": "Entre como administrador ou informe sua própria chave de API."})
         return True
     send_vision(handler, data)
     return True
