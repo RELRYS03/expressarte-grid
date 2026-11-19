@@ -2,9 +2,11 @@
 import base64
 import getpass
 import hashlib
+import os
 import secrets
+import sys
 
-password = getpass.getpass("Senha do administrador: ")
+password = os.environ.get(sys.argv[1], "") if len(sys.argv) > 1 else getpass.getpass("Senha do administrador: ")
 if len(password) < 12:
     raise SystemExit("Use ao menos 12 caracteres.")
 salt = secrets.token_bytes(16)

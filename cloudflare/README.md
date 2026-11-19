@@ -8,7 +8,7 @@ Este diretório prepara o Expressarte Grid para Cloudflare Workers (API e arquiv
 
 Para publicar sem compartilhar credenciais no chat, existe o fluxo manual em `.github/workflows/deploy-cloudflare.yml`. Ele cria o D1 (se necessário), cria as tabelas, configura os hashes dos administradores e publica o Worker. Ele só roda quando o proprietário aciona **Actions → Publicar Expressarte na Cloudflare → Run workflow**.
 
-Antes de acioná-lo, configure três segredos no repositório GitHub (`Settings → Secrets and variables → Actions`): `CLOUDFLARE_API_TOKEN`, `ADMIN_HASH_RELRYSALVES` e `ADMIN_HASH_RELRYS17`. O ID da conta informado pelo proprietário já está no fluxo. Para gerar os dois hashes sem mostrar senhas no terminal, execute `python cloudflare/hash-password.py` duas vezes. Os hashes são diferentes e correspondem aos dois e-mails reservados. Nunca envie senhas, hashes ou token no chat.
+Antes de acioná-lo, configure três segredos no repositório GitHub (`Settings → Secrets and variables → Actions`): `CLOUDFLARE_API_TOKEN`, `ADMIN_PASSWORD_RELRYSALVES` e `ADMIN_PASSWORD_RELRYS17`. Escolha senhas diferentes de pelo menos 12 caracteres. O GitHub guarda esses valores como segredos e o fluxo envia à Cloudflare somente os hashes. O ID da conta informado pelo proprietário já está no fluxo. Nunca envie senhas ou token no chat.
 
 ## Configuração na conta do proprietário
 

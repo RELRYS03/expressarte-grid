@@ -22,11 +22,11 @@ jobs:
         run: npx --yes wrangler@4 d1 execute expressarte-grid --remote --file=cloudflare/schema.sql
       - name: Configurar senhas dos dois administradores
         env:
-          HASH_RELRYSALVES: ${{ secrets.ADMIN_HASH_RELRYSALVES }}
-          HASH_RELRYS17: ${{ secrets.ADMIN_HASH_RELRYS17 }}
+          ADMIN_PASSWORD_RELRYSALVES: ${{ secrets.ADMIN_PASSWORD_RELRYSALVES }}
+          ADMIN_PASSWORD_RELRYS17: ${{ secrets.ADMIN_PASSWORD_RELRYS17 }}
         run: |
-          test -n "$HASH_RELRYSALVES" && test -n "$HASH_RELRYS17"
-          printf '%s' "$HASH_RELRYSALVES" | npx --yes wrangler@4 secret put ADMIN_HASH_RELRYSALVES
-          printf '%s' "$HASH_RELRYS17" | npx --yes wrangler@4 secret put ADMIN_HASH_RELRYS17
+          test -n "$ADMIN_PASSWORD_RELRYSALVES" && test -n "$ADMIN_PASSWORD_RELRYS17"
+          python cloudflare/hash-password.py ADMIN_PASSWORD_RELRYSALVES | npx --yes wrangler@4 secret put ADMIN_HASH_RELRYSALVES
+          python cloudflare/hash-password.py ADMIN_PASSWORD_RELRYS17 | npx --yes wrangler@4 secret put ADMIN_HASH_RELRYS17
       - name: Publicar site e API
         run: npx --yes wrangler@4 deploy
