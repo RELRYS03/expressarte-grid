@@ -1,0 +1,90 @@
+name: Publicar ExpressArte Grid no GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "public/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar os arquivos públicos
+        shell: bash
+        run: |
+          mkdir -p _site
+          cp -a public/. _site/
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          base = "/expressarte-grid"
+          quoted_root = re.compile(r"""(["'`])/(?!/|api/|expressarte-grid/)([^"'`\\s]*)""")
+          css_root = re.compile(r"""url\((\s*["']?)/(?!/|expressarte-grid/)""", re.IGNORECASE)
+
+          text_extensions = {
+              ".html", ".htm", ".css", ".js", ".mjs",
+              ".json", ".webmanifest", ".xml", ".svg"
+          }
+
+          for file in Path("_site").rglob("*"):
+              if not file.is_file() or file.suffix.lower() not in text_extensions:
+                  continue
+              try:
+                  source = file.read_text(encoding="utf-8")
+              except UnicodeDecodeError:
+                  continue
+
+              source = quoted_root.sub(
+                  lambda match: f"{match.group(1)}{base}/{match.group(2)}",
+                  source
+              )
+              source = css_root.sub(
+                  lambda match: f"url({match.group(1)}{base}/",
+                  source
+              )
+              file.write_text(source, encoding="utf-8")
+
+          # Mantém a rota amigável /organizador/ disponível no GitHub Pages.
+          organizer = Path("_site/organizador.html")
+          if organizer.exists():
+              alias = Path("_site/organizador/index.html")
+              alias.parent.mkdir(parents=True, exist_ok=True)
+              alias.write_text(organizer.read_text(encoding="utf-8"), encoding="utf-8")
+
+          Path("_site/.nojekyll").touch()
+          PY
+
+      - name: Enviar arquivos para publicação
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Publicar site
+        id: deployment
+        uses: actions/deploy-pages@v4
