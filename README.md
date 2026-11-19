@@ -1,4 +1,9 @@
-# GigaPrint local
+# Expressarte Grid
+
+- [Abrir a prévia privada](https://expressarte.cherryfloat4.chatgpt.site/organizador.html)
+- [Acompanhar os commits no GitHub](https://github.com/RELRYS03/expressarte-grid/commits/main/)
+
+Os commits mostram as alterações enviadas ao GitHub. A prévia abre a última versão publicada do site.
 
 Projeto independente em `/workspace/gigaprint`. Os arquivos públicos distribuídos em gigaprint.app são a referência para a interface, navegação e processamento 3D no navegador. A cópia local inclui o catálogo, páginas de ferramentas, documentação e versões em espanhol publicadas pela referência.
 
