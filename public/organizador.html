@@ -5361,8 +5361,49 @@ Olivia</textarea></label>
         <label><input type="radio" name="pcBrand" value="galaxy">Galaxy</label>
         <label><input type="radio" name="pcBrand" value="pixel">Pixel</label>
         <label><input type="radio" name="pcBrand" value="macbook">MacBook</label>
+        <label><input type="radio" name="pcBrand" value="custom">Personalizado</label>
       </div>
-      <label class="f">Model<select id="pcPhone"></select></label>
+      <label class="f" id="pcCatalogModel">Model<select id="pcPhone"></select></label>
+      <div id="pcCustom" hidden>
+        <label class="f">Nome do modelo<input id="pcCustomName" maxlength="60" placeholder="Meu celular"></label>
+        <label class="f">Cole as dimensões do fabricante<textarea id="pcCustomPaste" rows="2" maxlength="2000" placeholder="162,9 × 76,6 × 8,2 mm"></textarea></label>
+        <small class="note">Ordem: altura × largura × espessura do corpo, sem a câmera. Use mm ou cm.</small>
+        <button type="button" id="pcCustomApply">Preencher medidas</button>
+        <div class="grid2">
+          <label class="f">Altura (mm)<input id="pcCustomL" type="number" min="50" max="240" step="0.01"></label>
+          <label class="f">Largura (mm)<input id="pcCustomW" type="number" min="35" max="190" step="0.01"></label>
+          <label class="f">Espessura (mm)<input id="pcCustomT" type="number" min="3" max="25" step="0.01"></label>
+          <label class="f">Raio dos cantos (mm)<input id="pcCustomR" type="number" min="1" max="30" step="0.1" value="7"></label>
+        </div>
+        <details class="pp" open><summary>Foto da traseira e recorte da câmera</summary><div class="pp-b">
+          <p class="note">Use uma foto reta, com o celular inteiro visível. Marque o contorno do aparelho e depois o do módulo da câmera. A escala vem das medidas acima. Para aplicar uma foto como relevo, use a seção de imagem do desenho.</p>
+          <label class="f">Foto de referência<input type="file" id="pcReference" accept="image/png,image/jpeg,image/webp"></label>
+          <div id="pcReferenceTools" hidden>
+            <div class="row"><button type="button" id="pcMarkBody">Marcar celular</button><button type="button" id="pcMarkCamera">Marcar câmera</button></div>
+            <canvas id="pcReferenceCanvas" width="320" height="240" aria-label="Foto usada para marcar o celular e a câmera" style="display:block;width:100%;height:auto;touch-action:none;cursor:crosshair"></canvas>
+          </div>
+          <small class="note">Distâncias medidas da esquerda e do topo, olhando a traseira.</small>
+          <div class="grid2">
+            <label class="f">Esquerda (mm)<input id="pcCustomX" type="number" min="1" step="0.1" value="4"></label>
+            <label class="f">Topo (mm)<input id="pcCustomY" type="number" min="1" step="0.1" value="4"></label>
+            <label class="f">Largura do recorte (mm)<input id="pcCustomCW" type="number" min="3" step="0.1" value="24"></label>
+            <label class="f">Altura do recorte (mm)<input id="pcCustomCH" type="number" min="3" step="0.1" value="24"></label>
+            <label class="f">Raio do recorte (mm)<input id="pcCustomCR" type="number" min="0" step="0.1" value="4"></label>
+            <label class="f">Saliência da câmera (mm)<input id="pcCustomBump" type="number" min="0" max="12" step="0.1" value="2"></label>
+          </div>
+        </div></details>
+        <details class="pp"><summary>Porta e botões laterais</summary><div class="pp-b">
+          <div class="grid2">
+            <label class="f">Largura da porta (mm)<input id="pcCustomPortW" type="number" min="3" max="25" step="0.1" value="13"></label>
+            <label class="f">Altura da porta (mm)<input id="pcCustomPortH" type="number" min="1" max="12" step="0.1" value="5"></label>
+            <label class="f">Deslocamento da porta (mm)<input id="pcCustomPortX" type="number" step="0.1" value="0"></label>
+          </div>
+          <p class="note">Para cada botão, informe lado (E/D olhando a tela), distância do topo ao centro e comprimento, em mm. Uma linha por botão.</p>
+          <label class="f">Botões<textarea id="pcCustomButtons" maxlength="400" placeholder="D; 52; 14&#10;E; 42; 20"></textarea></label>
+        </div></details>
+        <p class="note" id="pcCustomStatus" role="status" aria-live="polite"></p>
+      </div>
+
       <p class="pc-est" id="pcEst" hidden></p>
       <div class="seg pc-phone-only" role="radiogroup" aria-label="Material" id="pcMaterials">
         <label><input type="radio" name="pcMaterial" value="tpu" checked>Flexible (TPU)</label>

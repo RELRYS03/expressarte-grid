@@ -14164,8 +14164,9 @@ Object.assign(PCX, { res: null, worker: null, workerOK: true, job: 0, timer: 0, 
 function pcNum(id, d, lo, hi) { const el = $(id); const v = el ? parseFloat(el.value) : NaN; return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d; }
 function pcOpt(id) { const el = $(id); const v = el ? parseFloat(el.value) : NaN; return Number.isFinite(v) ? v : null; }
 function pcOpts() {
+  const custom = pcCustomMode() ? pcCustomDevice() : null;
   const o = {
-    phone: $('pcPhone').value || 'iphone17pro', material: radio('pcMaterial') || 'tpu',
+    phone: custom ? 'custom' : ($('pcPhone').value || 'iphone17pro'), custom, material: radio('pcMaterial') || 'tpu',
     clearance: pcOpt('pcClear'), wall: pcNum('pcWall', 1.5, 1, 3.5), back: pcOpt('pcBack'), lip: pcOpt('pcLip'), lipH: pcOpt('pcLipH'),
     camDx: pcNum('pcCamDx', 0, -3, 3), camDy: pcNum('pcCamDy', 0, -3, 3), btnDy: pcNum('pcBtnDy', 0, -4, 4),
     buttons: radio('pcButtons') || 'covers', camera: radio('pcCamera') || 'guard', bottom: radio('pcBottom') || 'ports',
@@ -14239,9 +14240,25 @@ function pcSend(msg) {
   PCX.busy = true;
   try { pcWorker().postMessage(full); } catch (e) { PCX.workerOK = false; PCX.busy = false; pcLocal(full); }
 }
-function pcSchedule(now) { clearTimeout(PCX.timer); PCX.timer = setTimeout(() => pcSend({ type: 'build', opts: pcOpts(), view: pcView() }), now ? 0 : 320); }
+function pcSchedule(now) {
+  clearTimeout(PCX.timer);
+  PCX.timer = setTimeout(() => {
+    try {
+      const opts = pcOpts();
+      if (opts.custom) pcCustomStatus('Medidas aplicadas. Confira os recortes na prévia antes de exportar.');
+      pcSend({ type: 'build', opts, view: pcView() });
+    } catch (e) {
+      PCX.pending = null;
+      pcCustomStatus(e.message);
+      $('outDl').disabled = $('out3mf').disabled = true;
+    }
+  }, now ? 0 : 320);
+}
 function pcBuilt(r) { PCX.res = r; busy(false); if (S.tool !== 'phonecase') return; pcShow(); }
-function pcLabel() { const o = PCA.options({ phone: $('pcPhone').value }); const ph = (PCA.byId && PCA.byId[o.phone]) || (PCA.PHONES || []).concat(PCA.LAPTOPS || []).find(p => p.id === o.phone); return (ph ? ph.name : 'phone').toLowerCase().replace(/[^\w]+/g, '_').replace(/^_|_$/g, ''); }
+function pcLabel() {
+  const label = pcCustomMode() ? $('pcCustomName').value.trim() || 'Celular personalizado' : (PCA.byId[$('pcPhone').value]?.name || 'Phone');
+  return label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\w]+/g, '_').replace(/^_|_$/g, '') || 'celular';
+}
 function pcShow() {
   const r = PCX.res; if (!r) return;
   const st = r.stats, f = v => (Math.round(v * 10) / 10).toString();
@@ -14271,8 +14288,11 @@ function pcShow() {
 }
 async function pcExport(kind) {
   if (S.tool !== 'phonecase') return;
-  const o = pcOpts(), r = PCX.res, need = (r && r.need) || { colors: 1, addons: 0 };
-  const name = r ? `${r.stats.phoneName} case` : 'Phone case';
+  if (PCX.exportWait) return;
+  let o;
+  try { o = pcOpts(); } catch (e) { pcCustomStatus(e.message); return; }
+  const r = PCX.res, need = (r && r.need) || { colors: 1, addons: 0 };
+  const name = o.custom ? `Capinha ${o.custom.name}` : (r ? `${r.stats.phoneName} case` : 'Phone case');
   const req = { tool: 'phonecase', projectId: OUT.projectId, label: name, colors: need.colors, addons: need.addons, proPattern: need.proPattern, patternLabel: need.patternLabel, extraFont: need.extraFont, fontLabel: need.fontLabel, proMonogram: need.proMonogram, monogramLabel: need.monogramLabel };
   if (window.BSAccount && !await BSAccount.gate(req)) return;
   busy(true, 'Building the case files\u2026');
@@ -14289,20 +14309,145 @@ async function pcExport(kind) {
 }
 // ---------------------------------------------------------------- controls
 function pcDevices() { return (PCA.PHONES || []).concat(PCA.LAPTOPS || []); }
+function pcCustomMode() { return radio('pcBrand') === 'custom'; }
+function pcCustomNumber(s) { return Number(String(s).trim().replace(',', '.')); }
+function pcCustomDevice() {
+  function field(key, label, min, max) {
+    const el = $('pcCustom' + key), v = el.valueAsNumber;
+    if (!Number.isFinite(v) || v < min || v > max) throw new Error(`${label}: informe um valor entre ${min} e ${max} mm.`);
+    return v;
+  }
+  const L = field('L', 'Altura', 50, 240), W = field('W', 'Largura', 35, 190), T = field('T', 'Espessura', 3, 25);
+  const corner = field('R', 'Raio dos cantos', 1, Math.min(30, W / 2 - 1, L / 2 - 1));
+  const x = field('X', 'Esquerda da câmera', 1, W - 4), y = field('Y', 'Topo da câmera', 1, L - 4);
+  const w = field('CW', 'Largura do recorte', 3, W - x - 1), h = field('CH', 'Altura do recorte', 3, L - y - 1);
+  const r = field('CR', 'Raio do recorte', 0, Math.min(w, h) / 2);
+  const bump = field('Bump', 'Saliência da câmera', 0, 12);
+  const portW = field('PortW', 'Largura da porta', 3, 25), portH = field('PortH', 'Altura da porta', 1, Math.min(12, T));
+  const portOffset = Math.max(0, (W - portW) / 2 - 2);
+  const portX = field('PortX', 'Deslocamento da porta', -portOffset, portOffset);
+  const buttons = $('pcCustomButtons').value.split(/\r?\n/).filter(line => line.trim()).map((line, index) => {
+    const [side, center, length, extra] = line.trim().split(/\s*;\s*/);
+    const yc = pcCustomNumber(center), len = pcCustomNumber(length);
+    if (!/^[ED]$/i.test(side) || extra !== undefined || !Number.isFinite(yc) || !Number.isFinite(len) || len < 2 || yc - len / 2 < 0 || yc + len / 2 > L) {
+      throw new Error(`Botão na linha ${index + 1}: use E ou D; distância do topo; comprimento.`);
+    }
+    return { side: side.toUpperCase() === 'E' ? 'L' : 'R', kind: 'power', y: yc, len, z: T / 2, h: Math.min(2.5, T / 2) };
+  });
+  return { id: 'custom', brand: 'custom', name: $('pcCustomName').value.trim() || 'Celular personalizado',
+    L, W, T, corner: { e: corner, n: 2 }, edge: { back: 0.8, front: 0.8 }, buttons,
+    camera: { parts: [{ t: 'r', x0: x, y0: y, x1: x + w, y1: y + h, r, full: false }], plateau: bump, bump },
+    bottom: { usb: { x: portX, w: portW, h: portH } }, est: [] };
+}
+
+function pcDimensionsFromText(text) {
+  const value = '(\\d+(?:[.,]\\d+)?)', unit = '(mm|cm)?';
+  const triple = text.match(new RegExp(`${value}\\s*${unit}\\s*[x×✕]\\s*${value}\\s*${unit}\\s*[x×✕]\\s*${value}\\s*${unit}(?![\\w])`, 'i'));
+  const mm = (v, u) => pcCustomNumber(v) * (u?.toLowerCase() === 'cm' ? 10 : 1);
+  const measure = labels => text.match(new RegExp(`(?:${labels})\\s*[:=]?\\s*${value}\\s*${unit}`, 'i'));
+  const labelled = [measure('altura|height'), measure('largura|width'), measure('espessura|thickness|depth')];
+  if (labelled.every(Boolean)) return labelled.map(m => mm(m[1], m[2] || labelled.find(n => n[2])?.[2]));
+  if (triple) return [1, 3, 5].map(i => mm(triple[i], triple[i + 1] || triple[6] || triple[2] || triple[4]));
+  throw new Error('Cole altura × largura × espessura (por exemplo, 162,9 × 76,6 × 8,2 mm) ou informe os três campos.');
+}
+
+function pcCustomStatus(message) { $('pcCustomStatus').textContent = message; }
+$('pcCustomApply').onclick = () => {
+  try {
+    const values = pcDimensionsFromText($('pcCustomPaste').value);
+    ['L', 'W', 'T'].forEach((key, i) => { $('pcCustom' + key).value = Number(values[i].toFixed(3)); });
+    pcSchedule(true);
+  } catch (e) { pcCustomStatus(e.message); }
+};
+
+(function pcReferenceEditor() {
+  const canvas = $('pcReferenceCanvas'), ctx = canvas.getContext('2d');
+  let image, body, camera, start, draft, mode = 'body', loading = 0;
+  const choose = value => {
+    mode = value;
+    $('pcMarkBody').setAttribute('aria-pressed', String(value === 'body'));
+    $('pcMarkCamera').setAttribute('aria-pressed', String(value === 'camera'));
+  };
+  const redraw = () => {
+    if (!image) return;
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    for (const [rect, color] of [[body, '#48e1a0'], [camera, '#ffbe58'], [draft, '#fff']]) {
+      if (!rect) continue;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    }
+  };
+  const point = e => {
+    const r = canvas.getBoundingClientRect();
+    return { x: Math.max(0, Math.min(canvas.width, (e.clientX - r.left) * canvas.width / r.width)),
+      y: Math.max(0, Math.min(canvas.height, (e.clientY - r.top) * canvas.height / r.height)) };
+  };
+  const box = (a,b) => ({ x: Math.min(a.x,b.x), y: Math.min(a.y,b.y), w: Math.abs(a.x-b.x), h: Math.abs(a.y-b.y) });
+  function applyCamera() {
+    if (!body || !camera) return;
+    const W = $('pcCustomW').valueAsNumber, L = $('pcCustomL').valueAsNumber;
+    if (!(W > 0 && L > 0)) { pcCustomStatus('Preencha a altura e a largura antes de aplicar o recorte.'); return; }
+    const values = [(camera.x-body.x)*W/body.w, (camera.y-body.y)*L/body.h, camera.w*W/body.w, camera.h*L/body.h];
+    if (values[0] < 1 || values[1] < 1 || values[0]+values[2] > W-1 || values[1]+values[3] > L-1 || values[2] < 3 || values[3] < 3) {
+      pcCustomStatus('Marque a câmera dentro do retângulo do celular, deixando 1 mm até as bordas.'); return;
+    }
+    ['X','Y','CW','CH'].forEach((key,i) => { $('pcCustom'+key).value = Number(values[i].toFixed(2)); });
+    $('pcCustomCR').value = Math.min($('pcCustomCR').valueAsNumber || 0, Math.floor(Math.min(values[2],values[3])*5)/10);
+    pcSchedule(true);
+  }
+  $('pcReference').onchange = async e => {
+    const file = e.target.files[0], job = ++loading;
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image(); img.src = url; await img.decode();
+      if (job !== loading) return;
+      image = img; body = camera = draft = start = null;
+      const scale = 600 / Math.max(img.width, img.height);
+      canvas.width = Math.max(1, Math.round(img.width * scale));
+      canvas.height = Math.max(1, Math.round(img.height * scale));
+      $('pcReferenceTools').hidden = false;
+      choose('body'); redraw(); pcCustomStatus('Arraste sobre a foto para marcar o contorno completo do celular.');
+    } catch (e) { if (job === loading) pcCustomStatus('Não foi possível abrir a foto. Use PNG, JPG ou WebP.'); }
+    finally { URL.revokeObjectURL(url); }
+  };
+  $('pcMarkBody').onclick = () => choose('body');
+  $('pcMarkCamera').onclick = () => choose('camera');
+  canvas.onpointerdown = e => {
+    if (!image || !e.isPrimary) return;
+    if (mode === 'camera' && !body) { pcCustomStatus('Marque o contorno do celular primeiro.'); return; }
+    start = point(e); canvas.setPointerCapture(e.pointerId);
+  };
+  canvas.onpointermove = e => { if (start && e.isPrimary) { draft = box(start,point(e)); redraw(); } };
+  canvas.onpointercancel = () => { start = draft = null; redraw(); };
+  canvas.onpointerup = e => {
+    if (!start || !e.isPrimary) return;
+    const rect = box(start,point(e)); start = draft = null;
+    if (rect.w >= 5 && rect.h >= 5) {
+      if (mode === 'body') { body = rect; camera = null; choose('camera'); pcCustomStatus('Agora marque o módulo da câmera.'); }
+      else { camera = rect; applyCamera(); }
+    }
+    redraw();
+  };
+})();
+
 function pcPhonesUI() {
   const brand = radio('pcBrand') || 'iphone', sel = $('pcPhone'), cur = sel.value;
-  if (sel.dataset.brand !== brand) {
+  $('pcCustom').hidden = brand !== 'custom';
+  $('pcCatalogModel').hidden = brand === 'custom';
+  if (sel.dataset.brand !== brand && brand !== 'custom') {
     sel.innerHTML = ''; sel.dataset.brand = brand;
     for (const p of pcDevices().filter(p => p.brand === brand)) { const op = document.createElement('option'); op.value = p.id; op.textContent = p.name; sel.appendChild(op); }
     if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
     else if (sel.options.length) sel.value = sel.options[0].value;
   }
-  if (window.GPToolSearch) GPToolSearch.enhanceSelect(sel, { placeholder: 'Search models\u2026' });
+  if (brand !== 'custom' && window.GPToolSearch) GPToolSearch.enhanceSelect(sel, { placeholder: 'Search models\u2026' });
   const est = $('pcEst'); if (est) { est.hidden = true; est.textContent = ''; }
   pcDeviceUI();
 }
 function pcDeviceUI() {
-  const ph = pcDevices().find(p => p.id === ($('pcPhone') || {}).value);
+  const ph = pcCustomMode() ? null : pcDevices().find(p => p.id === ($('pcPhone') || {}).value);
   const laptop = !!(ph && ph.kind === 'laptop');
   document.querySelectorAll('.pc-phone-only').forEach(el => { el.hidden = laptop; });
   const setField = (id, labelText, min, max, step, val) => {
@@ -14421,7 +14566,7 @@ function pcMonoSwatch(cv, style) {
 }
 function pcMonoUI() {
   if (!$('pcMonoBox')) return;
-  const laptop = (pcDevices().find(p => p.id === ($('pcPhone') || {}).value) || {}).kind === 'laptop';
+  const laptop = !pcCustomMode() && (pcDevices().find(p => p.id === ($('pcPhone') || {}).value) || {}).kind === 'laptop';
   const sz = $('pcMonoSize'), R = PCA.MONO_SIZE[laptop ? 'laptop' : 'phone'];
   if (sz && sz.dataset.kind !== (laptop ? 'laptop' : 'phone')) { sz.dataset.kind = laptop ? 'laptop' : 'phone'; sz.min = R.min; sz.max = R.max; sz.value = R.def; const o = $('pcMonoSizeOut'); if (o) o.textContent = String(R.def); }
   if ($('pcMonoCamLbl')) $('pcMonoCamLbl').textContent = laptop ? 'Upper' : 'Near the camera';
@@ -14525,8 +14670,8 @@ async function pcLoadFile(f) {
 function pcEnter() { pcPhonesUI(); pcPatsUI(); pcAddsUI(); pcBuildPalettes(); pcColorsUI(); pcMatUI(); pcDesignUI(); pcSchedule(true); }
 ['pcPhoneStep', 'pcCaseStep', 'pcDesignStep', 'pcAddonStep'].forEach(id => {
   const el = document.getElementById(id); if (!el) return;
-  el.addEventListener('input', e => { const t = e.target; if (!t || /^pc(File|Thresh)$/.test(t.id) || t.dataset.addon) return; pcDesignUI(); pcSchedule(); });
-  el.addEventListener('change', e => { const t = e.target; if (!t || /^pc(File|Thresh|Invert)$/.test(t.id) || t.dataset.addon || t.name === 'pcPat') return;
+  el.addEventListener('input', e => { const t = e.target; if (!t || /^pc(File|Thresh|Reference|CustomPaste)$/.test(t.id) || t.dataset.addon) return; pcDesignUI(); pcSchedule(); });
+  el.addEventListener('change', e => { const t = e.target; if (!t || /^pc(File|Thresh|Invert|Reference|CustomPaste)$/.test(t.id) || t.dataset.addon || t.name === 'pcPat') return;
     if (t.name === 'pcBrand' || t.id === 'pcPhone') pcPhonesUI(); if (t.name === 'pcMaterial') pcMatUI(); pcDesignUI(); pcSchedule(true); });
 });
 document.querySelectorAll('input[name="pcView"]').forEach(r => r.addEventListener('change', () => pcSchedule(true)));

@@ -102,7 +102,8 @@
       if (!raw.colors || raw.colors.guard == null) o.colors.guard = o.colors.case;
       if (!raw.colors || raw.colors.mono == null) o.colors.mono = o.colors.raised;
     }
-    o.phone = PM.byId[o.phone] ? o.phone : DEFAULTS.phone;
+    const custom = o.phone === 'custom' && o.custom?.id === 'custom';
+    o.phone = custom || PM.byId[o.phone] ? o.phone : DEFAULTS.phone;
     const dev = PM.byId[o.phone], laptop = !!(dev && dev.kind === 'laptop');
     o.kind = laptop ? 'laptop' : 'phone';
     if (laptop) o.material = 'rigid';
@@ -957,7 +958,7 @@
   // ---------------------------------------------------------------- build
   function build(raw, M) {
     if (!M || !M.Manifold) throw new Error('The solid engine (Manifold) is not loaded.');
-    const o = options(raw), ph = PM.byId[o.phone], warnings = [], K = kit(M);
+    const o = options(raw), ph = o.phone === 'custom' ? o.custom : PM.byId[o.phone], warnings = [], K = kit(M);
     try {
       if (ph.kind === 'laptop') return buildLaptop(o, ph, K, warnings);
       if (o.addons.length && o.mount === 'none') { o.mount = 'ring'; o._autoMount = true; }
