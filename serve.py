@@ -3,9 +3,20 @@ from argparse import ArgumentParser
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import admin_api
 
 
 class GigaPrintHandler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        if admin_api.handle_get(self):
+            return
+        super().do_GET()
+
+    def do_POST(self):
+        if admin_api.handle_post(self):
+            return
+        self.send_error(404)
+
     def translate_path(self, path):
         local_path = Path(super().translate_path(path))
         if local_path.is_dir():
@@ -30,7 +41,7 @@ def main():
     args = parser.parse_args()
     public = Path(__file__).resolve().parent / "public"
     with ThreadingHTTPServer((args.host, args.port), partial(GigaPrintHandler, directory=str(public))) as server:
-        print(f"GigaPrint · http://{args.host}:{server.server_port}", flush=True)
+        print(f"Expressarte · http://{args.host}:{server.server_port}", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

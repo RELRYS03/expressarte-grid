@@ -28,7 +28,9 @@ O REA 6.8.0 analisou os módulos públicos de organização e navegação de pas
 
 | Caminho | Conteúdo |
 | --- | --- |
-| `serve.py` | Servidor estático com as rotas públicas e política de acesso local aos recursos da aplicação |
+| `serve.py` | Servidor local com páginas públicas e API do administrador |
+| `admin_api.py` | Login restrito a dois e-mails e análise opcional da câmera por OpenAI ou Claude |
+| `public/expressarte-ai.js` | Entrada do administrador e aplicação da sugestão de câmera ao gerador |
 | `public/index.html` | Página inicial, catálogo e editores embutidos |
 | `public/*/index.html`, `public/es/` | Páginas de ferramentas, documentação e versões em espanhol |
 | `public/js/` | Visualização WebGL, geradores, importação de arquivos 3D e exportação |
@@ -38,7 +40,15 @@ O REA 6.8.0 analisou os módulos públicos de organização e navegação de pas
 
 Os geradores processam os arquivos no navegador. Os formatos disponíveis variam por ferramenta e incluem STL, OBJ e 3MF como entrada, além de STL, 3MF, ZIP, SVG, DXF e PDF como saída. Sugestões ficam no armazenamento local do navegador. O catálogo usa a seleção inicial de ferramentas populares em vez de consultar estatísticas remotas.
 
-A edição local inclui as calculadoras de escala, peso e comprimento do filamento. As rotas de preço e custo, o login, a cobrança e as ferramentas identificadas como exclusivas para apoiadores foram excluídos do fluxo. Estimativas de tempo e de material usam dimensões, densidade, preenchimento e velocidade.
+A edição local inclui as calculadoras de escala, peso e comprimento do filamento. As rotas de preço e custo, a cobrança e as ferramentas identificadas como exclusivas para apoiadores foram excluídos do fluxo. Estimativas de tempo e de material usam dimensões, densidade, preenchimento e velocidade.
+
+## Administrador e análise opcional da capinha
+
+O acesso de administrador aceita somente `relrysalves@gmail.com` e `relrys17@gmail.com`. Configure a senha **fora do repositório**: execute `python admin_api.py hash-password`, copie o hash retornado para a variável de ambiente `EXPRESSARTE_ADMIN_PASSWORD_HASH` e inicie `python serve.py`. Não envie a senha ou o hash ao GitHub. O botão de entrada fica no canto inferior esquerdo. Sessões duram 12 horas e as tentativas incorretas são limitadas.
+
+Na ferramenta de capinhas, a opção gratuita continua local: informe medidas, carregue a foto, use a sugestão geométrica e ajuste o recorte manualmente. Administradores podem abrir o botão de entrada e pedir análise da foto pela OpenAI ou Anthropic. A chave pode ser informada para uma única solicitação ou configurada no servidor como `EXPRESSARTE_OPENAI_API_KEY` ou `EXPRESSARTE_ANTHROPIC_API_KEY`. A foto é enviada ao provedor escolhido apenas nessa ação. A resposta sugere o retângulo do módulo de câmera; a malha 3D e o STL continuam sendo gerados pelo motor local. Confira o recorte e a saliência antes de imprimir.
+
+O repositório Lovable `seamless-project-migration` foi comparado: ele usa autenticação Supabase e guarda uma chave pessoal no navegador/conta. Esta implementação usa servidor local e não salva chaves pessoais. **A prévia estática em Sites não executa `serve.py`; o botão de entrada e a análise por API só funcionam em hospedagem com Python.** Para oferecer acesso de administrador na prévia pública/privada, será necessário migrar a hospedagem para um serviço com backend ou integrar um backend externo. Não publique uma interface de login que aparente funcionar sem esse servidor.
 
 ## Referências da implementação
 
