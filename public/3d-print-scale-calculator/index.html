@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D Print Scale Calculator: Size, Filament, Time | Expressarte</title>
+<meta name="description" content="Escalar um modelo 3D para um tamanho exato: obter a porcentagem da escala, e como o peso do filamento e tempo de impressão crescem quando você torná-lo maior.">
+
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="theme-color" content="#795038">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Expressarte">
+<meta property="og:title" content="3D Print Scale Calculator: Size, Filament, Time | Expressarte">
+<meta property="og:description" content="Escalar um modelo 3D para um tamanho exato: obter a porcentagem da escala, e como o peso do filamento e tempo de impressão crescem quando você torná-lo maior.">
+
+
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Expressarte: free in-browser 3D print tools">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="3D Print Scale Calculator: Size, Filament, Time | Expressarte">
+<meta name="twitter:description" content="Scale a 3D model to an exact size: get the scale percentage, and how filament weight and print time grow when you make it bigger.">
+
+<meta name="twitter:image:alt" content="Expressarte: free in-browser 3D print tools">
+
+
+<style>.legal table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0}.legal th,.legal td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}.legal th{background:var(--soft)}.legal h2{margin-top:28px}:root{--ink:#38251b;--muted:#6b5447;--line:#e4d4c1;--accent:#795038;--soft:#f2e4d2;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;background:#fff;color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:860px;margin:0 auto;padding:0 20px}header{border-bottom:1px solid var(--line)}header .w{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:16px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:20px;color:var(--ink);text-decoration:none}
+h1{font-size:clamp(30px,5vw,44px);line-height:1.1;margin:40px 0 14px}h2{font-size:22px;margin:36px 0 10px}h3{font-size:17px;margin:20px 0 4px}
+p,li{color:#2b3757}.lead{font-size:18px;color:var(--muted)}a{color:#583622}
+.cta{display:inline-block;background:var(--accent);color:#fff;font-weight:600;padding:11px 18px;border-radius:8px;text-decoration:none;margin:8px 8px 8px 0}.cta.alt{background:var(--soft);color:#583622}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:#f8f0e4}
+
+.tool-shots{display:grid;gap:14px;margin:18px 0}.tool-shots figure{margin:0}.tool-shots img{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#f8f0e4}.tool-shots figcaption{font-size:14px;color:var(--muted);margin-top:4px}@media(min-width:700px){.tool-shots{grid-template-columns:1fr 1fr}.tool-shots figure:first-child{grid-column:1/-1}}
+details{border-top:1px solid var(--line);padding:10px 0}summary{font-weight:600;cursor:pointer}
+footer{border-top:1px solid var(--line);margin-top:48px;padding:20px 0 40px;font-size:14px;color:var(--muted)}footer a{margin-right:14px;display:inline-block}.fblink{display:inline-flex;align-items:center;gap:8px;vertical-align:middle;text-decoration:none}.fblink svg{width:30px;height:30px;display:block}.socials{display:inline-flex;align-items:center;gap:8px}header .socials{margin-left:auto;margin-right:12px}.iglink:focus-visible{outline:2px solid #E4405F;outline-offset:2px}.crumbs{margin:24px 0 -24px;font-size:14px;color:var(--muted)}</style>
+</head>
+<body>
+<header><div class="w"><a class="logo" href="/"><svg viewbox="0 0 30 30" width="26" height="26" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2.5" fill="#795038"></rect><rect x="16" y="2" width="12" height="12" rx="2.5" fill="#d9bd99"></rect><rect x="2" y="16" width="12" height="12" rx="2.5" fill="#d9bd99"></rect><rect x="16" y="16" width="12" height="12" rx="2.5" fill="#795038"></rect></svg>Expressarte</a><a class="cta" href="/">Abra a aplicação</a></div></header>
+<main class="w">
+<p class="crumbs"><a href="/">Expressarte</a> / <a href="/3d-printing-calculators">Calculadoras</a></p>
+<h1>Calculadora de escala de impressão 3D</h1>
+<p class="lead">Obtenha a porcentagem exata da escala para fazer um modelo de um determinado tamanho, e veja quanto mais filamento e tempo uma impressão maior leva.</p>
+<style>.calc [hidden]{display:none!important}.calc{display:grid;gap:18px;margin:18px 0}@media(min-width:860px){.calc{grid-template-columns:1.2fr 1fr;align-items:start}.calc-out{position:sticky;top:12px}}
+.calc fieldset{border:1px solid var(--line);border-radius:12px;padding:10px 14px 14px;margin:0 0 12px}.calc legend{font-weight:700;padding:0 6px}
+.calc label{display:grid;gap:4px;font-size:14px;margin:8px 0}.calc label.ck{display:flex;gap:8px;align-items:center}.calc input[type=number],.calc select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;max-width:100%}
+.calc .hint{color:var(--muted);font-size:12.5px}.calc-out{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--soft)}
+.calc-res{width:100%;border-collapse:collapse;font-size:15px}.calc-res th{text-align:left;font-weight:400;padding:6px 4px;border-bottom:1px solid var(--line)}.calc-res td{text-align:right;padding:6px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}.calc-res tr.tot th,.calc-res tr.tot td{font-weight:700}
+.calc-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:14px}.calc-tools button{font:inherit;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}</style>
+<div class="calc"><form id="calc" onsubmit="return false" aria-label="Calculadora de escala de impressão 3D"><fieldset><legend>Escala</legend><label id="f-from">Tamanho atual (mm)<input type="number" name="from" value="100" inputmode="decimal" step="1" min="0.1"><span class="hint">Altura, largura ou qualquer dimensão do modelo agora.</span></label><label id="f-to">Tamanho que deseja (mm)<input type="number" name="to" value="200" inputmode="decimal" step="1" min="0.1"></label><label id="f-grams">Filamento agora (g)<input type="number" name="grams" value="50" inputmode="decimal" step="1" min="0"></label><label id="f-hours">Hora de impressão agora (horas)<input type="number" name="hours" value="3" inputmode="decimal" step="0.1" min="0"></label><label class="ck" id="f-shell"><input type="checkbox" name="shell"> Principalmente paredes (infilição baixa, vaso ou oco)</label></fieldset></form>
+<div class="calc-out"><h2 style="margin-top:0">Resultado</h2><div id="calcOut" aria-live="polite"><noscript>Activar o JavaScript para usar a calculadora.</noscript></div>
+<div class="calc-tools"><label>Moeda <select id="cur"><option>$</option><option>€</option><option>£</option><option value="C$">C$</option><option value="A$">A$</option></select></label><button type="button" id="calcShare">Copiar um link com estes números</button></div></div></div>
+<script>(function(){var ENGINE={MATERIALS:{"PLA":1.24,"PETG":1.27,"ABS":1.04,"ASA":1.07,"TPU":1.21,"Nylon":1.14,"PC":1.2,"PLA-CF":1.29,"PETG-CF":1.3,"Silk PLA":1.24,"Wood PLA":1.15,"PVA":1.23,"HIPS":1.04},n:function(v, d) { const x = parseFloat(v); return Number.isFinite(x) ? x : d; },cost:function(i) {
+    const n = ENGINE.n, g = Math.max(0, n(i.grams, 0)), h = Math.max(0, n(i.hours, 0)), fail = Math.min(90, Math.max(0, n(i.fail, 0))) / 100;
+    const filament = g * (1 + Math.max(0, n(i.waste, 0)) / 100) / 1000 * Math.max(0, n(i.pricePerKg, 0));
+    const electricity = Math.max(0, n(i.watts, 0)) / 1000 * h * Math.max(0, n(i.kwh, 0));
+    const life = Math.max(1, n(i.lifeHours, 5000)), wear = (Math.max(0, n(i.printerPrice, 0)) / life + Math.max(0, n(i.maintPerHour, 0))) * h;
+    const labor = (Math.max(0, n(i.prepMin, 0)) + Math.max(0, n(i.postMin, 0))) / 60 * Math.max(0, n(i.laborRate, 0));
+    const extras = Math.max(0, n(i.extras, 0)) + Math.max(0, n(i.packaging, 0));
+    const risk = (filament + electricity + wear) * (fail / (1 - fail));
+    const total = filament + electricity + wear + labor + extras + risk;
+    return { filament, electricity, wear, labor, extras, risk, total, perGram: g > 0 ? total / g : 0, perHour: h > 0 ? total / h : 0 };
+  },price:function(i) {
+    const n = ENGINE.n, cost = Math.max(0, n(i.cost, 0)), fee = Math.min(60, Math.max(0, n(i.feePct, 0))) / 100, fixed = Math.max(0, n(i.feeFixed, 0)) + Math.max(0, n(i.listingFee, 0));
+    const ship = Math.max(0, n(i.shipCost, 0)) - Math.max(0, n(i.shipCharge, 0)), base = cost + Math.max(0, ship);
+    let p;
+    if (i.method === 'margin') { const m = Math.min(90, Math.max(0, n(i.margin, 40))) / 100; p = (base + fixed) / Math.max(0.05, 1 - fee - m); }
+    else { const k = Math.max(0, n(i.markup, 100)) / 100; p = (base * (1 + k) + fixed) / Math.max(0.05, 1 - fee); }
+    if (i.charm && p > 1) p = Math.ceil(p + 0.01) - 0.01;
+    const fees = p * fee + fixed, profit = p - fees - base;
+    return { price: p, fees, profit, margin: p > 0 ? profit / p : 0, markup: base > 0 ? profit / base : 0, breakEven: (base + fixed) / Math.max(0.05, 1 - fee) };
+  },gramsPerMeter:function(diameter, density) { const r = ENGINE.n(diameter, 1.75) / 20; return Math.PI * r * r * 100 * ENGINE.n(density, 1.24); },filament:function(i) {
+    const gpm = ENGINE.gramsPerMeter(i.diameter, i.density), mode = i.from === 'length' ? 'length' : 'weight';
+    const grams = mode === 'length' ? Math.max(0, ENGINE.n(i.meters, 0)) * gpm : Math.max(0, ENGINE.n(i.grams, 0));
+    const meters = gpm > 0 ? grams / gpm : 0, cost = grams / 1000 * Math.max(0, ENGINE.n(i.pricePerKg, 0));
+    return { gpm, grams, meters, cost, spool: grams > 0 ? 1000 / grams : 0 };
+  },electricity:function(i) {
+    const kwh = Math.max(0, ENGINE.n(i.watts, 0)) / 1000 * Math.max(0, ENGINE.n(i.hours, 0)), rate = Math.max(0, ENGINE.n(i.kwh, 0));
+    const perMonth = Math.max(0, ENGINE.n(i.watts, 0)) / 1000 * Math.max(0, ENGINE.n(i.hoursPerDay, 0)) * 30 * rate;
+    return { kwh, cost: kwh * rate, perHour: Math.max(0, ENGINE.n(i.watts, 0)) / 1000 * rate, perMonth };
+  },spool:function(i) {
+    const left = Math.max(0, ENGINE.n(i.gross, 0) - Math.max(0, ENGINE.n(i.empty, 0))), gpm = ENGINE.gramsPerMeter(i.diameter, i.density), need = Math.max(0, ENGINE.n(i.need, 0));
+    return { grams: left, meters: gpm > 0 ? left / gpm : 0, enough: need > 0 ? left >= need * 1.05 : null, short: need > 0 ? Math.max(0, need * 1.05 - left) : 0 };
+  },scale:function(i) {
+    const s = Math.max(0.01, ENGINE.n(i.to, 100)) / Math.max(0.01, ENGINE.n(i.from, 100)), e = i.shell ? 2.3 : 2.85;
+    return { factor: s, percent: s * 100, grams: Math.max(0, ENGINE.n(i.grams, 0)) * Math.pow(s, e), hours: Math.max(0, ENGINE.n(i.hours, 0)) * Math.pow(s, e - 0.25), volume: Math.pow(s, 3) };
+  }};var K="scale",F=document.getElementById('calc'),O=document.getElementById('calcOut'),cur=document.getElementById('cur');
+var LS='gp-calc-'+K,SH='gp-calc-shared';
+function money(v){var c=cur?cur.value:'$';return (v<0?'-':'')+c+Math.abs(v).toFixed(Math.abs(v)<10?2:2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function fx(v,d){return Number(v).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});}
+function pct(v){return fx(v*100,1)+'%';}
+function vals(){var o={};F.querySelectorAll('input,select').forEach(function(e){o[e.name]=e.type==='checkbox'?e.checked:e.value;});return o;}
+function row(a,b,strong){return '<tr'+(strong?' class="tot"':'')+'><th scope="row">'+a+'</th><td>'+b+'</td></tr>';}
+function show(id,on){var e=document.getElementById('f-'+id);if(e)e.hidden=!on;}
+function calc(){var v=vals(),h='';
+ if(K==='cost'||K==='price'){var c=ENGINE.cost(v);h+=row('Filament',money(c.filament))+row('Electricity',money(c.electricity))+row('Printer wear and upkeep',money(c.wear))+row('Labor',money(c.labor))+row('Hardware, paint and packaging',money(c.extras))+row('Failed prints',money(c.risk))+row('Total cost per print',money(c.total),1)+row('Cost per gram',money(c.perGram))+row('Cost per machine hour',money(c.perHour));
+  if(K==='price'){show('markup',v.method!=='margin');show('margin',v.method==='margin');v.cost=c.total;var p=ENGINE.price(v),hrs=ENGINE.n(v.hours,0);h+=row('Suggested price',money(p.price),1)+row('Fees',money(p.fees))+row('Profit per sale',money(p.profit),1)+row('Profit margin',pct(p.margin))+row('Break-even price',money(p.breakEven))+(hrs>0?row('Profit per machine hour',money(p.profit/hrs)):'')+row('10 sold: profit',money(p.profit*10));}}
+ else if(K==='filament'){show('grams',v.from!=='length');show('meters',v.from==='length');var f=ENGINE.filament(v);h+=row('Weight',fx(f.grams,0)+' g',1)+row('Length',fx(f.meters,1)+' m',1)+row('Grams per meter',fx(f.gpm,2)+' g/m')+row('Filament cost',money(f.cost))+(f.spool?row('Prints per 1 kg spool',fx(f.spool,1)):'');}
+ else if(K==='electricity'){var e=ENGINE.electricity(v);h+=row('Energy for this print',fx(e.kwh,2)+' kWh')+row('Cost of this print',money(e.cost),1)+row('Cost per hour',money(e.perHour))+row('Cost per month at '+fx(ENGINE.n(v.hoursPerDay,0),0)+' h/day',money(e.perMonth),1);}
+ else if(K==='spool'){var s=ENGINE.spool(v);h+=row('Filament left',fx(s.grams,0)+' g',1)+row('Length left',fx(s.meters,1)+' m',1)+(s.enough===null?'':row('Enough for the next print?',s.enough?'Yes':'No, about '+fx(s.short,0)+' g short',1));}
+ else if(K==='scale'){var q=ENGINE.scale(v);h+=row('Scale to type in your slicer',fx(q.percent,1)+'%',1)+row('Scale factor',fx(q.factor,3)+'×')+row('Volume',fx(q.volume,2)+'× the original')+row('Filament at the new size',fx(q.grams,0)+' g',1)+row('Print time at the new size',fx(q.hours,1)+' hours');}
+ O.innerHTML='<table class="calc-res">'+h+'</table>';try{localStorage.setItem(LS,JSON.stringify(v));if(K==='cost'||K==='price')localStorage.setItem(SH,JSON.stringify(v));}catch(e){}}
+function load(){var o={};try{o=JSON.parse(localStorage.getItem(LS)||(K==='cost'||K==='price'?localStorage.getItem(SH):'')||'{}')||{};}catch(e){}
+ new URLSearchParams(location.search).forEach(function(v,k){o[k]=v==='true'?true:v==='false'?false:v;});
+ F.querySelectorAll('input,select').forEach(function(e){if(o[e.name]===undefined)return;if(e.type==='checkbox')e.checked=!!o[e.name];else e.value=o[e.name];});}
+F.addEventListener('input',function(ev){var t=ev.target;if(t.name==='preset'&&t.value!=='custom')F.watts.value=t.value;if(t.name==='watts'&&F.preset)F.preset.value='custom';if(t.name==='emptyType'&&t.value!=='custom')F.empty.value=t.value;if(t.name==='empty'&&F.emptyType)F.emptyType.value='custom';calc();});
+F.addEventListener('change',calc);if(cur)cur.addEventListener('change',function(){try{localStorage.setItem('gp-calc-cur',cur.value);}catch(e){}calc();});
+try{var cc=localStorage.getItem('gp-calc-cur');if(cc&&cur)cur.value=cc;}catch(e){}
+var sh=document.getElementById('calcShare');if(sh)sh.addEventListener('click',function(){var u=location.origin+location.pathname+'?'+new URLSearchParams(vals()).toString();(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){sh.textContent='Link copied';},function(){prompt('Copy this link',u);});});
+load();calc();})();</script>
+<h2>Como funciona</h2>
+<p>Escalar um modelo por um fator multiplica seu comprimento por esse fator, sua superfície pelo quadrado e seu volume pelo cubo. Dobrando o tamanho de um modelo sólido precisa de cerca de 7 vezes o filamento; uma impressão na maioria de baixa espessura cresce mais perto do quadrado, cerca de 5 vezes. O tempo de impressão cresce um pouco mais lento do que o filamento, porque seções mais grossas imprimir com movimentos mais longos e mais rápidos. Se o modelo maior não se encaixar na impressora, divida-o em partes com a ferramenta de impressão Gigante.</p>
+<ol><li><b>Medir o modelo</b>: Uma dimensão agora, em mm.</li><li><b>Digite o tamanho que você deseja</b>: A calculadora dá a porcentagem da escala para digitar em seu cortador.</li><li><b>Veja o custo de ir grande</b>: Filamento e tempo no novo tamanho.</li></ol>
+
+<p>Precisa dos gramas e tempo de impressão para um modelo? Abra- o em <a href="/">Expressarte</a>: cada ferramenta mostra uma estimativa de filamento e tempo, e seu cortador dá os números exatos.</p>
+<h2>Perguntas</h2>
+<details><summary>Como escalono um STL para um tamanho exato?</summary><p>Divida o tamanho que deseja pelo tamanho atual e multiplique por 100 para obter a porcentagem, e digite-o no seu campo de escala do cortador. As ferramentas Expressarte tomam o tamanho final em mm diretamente.</p></details>
+<details><summary>Se eu dobrar o tamanho, quanto mais filamento ele usa?</summary><p>Cerca de 4 a 8 vezes mais: mais perto de 8 vezes para peças sólidas com enchimento elevado, e 4 a 5 vezes para impressões de paredes finas ou de enchimento baixo.</p></details>
+<details><summary>E se o modelo em escala for maior que a minha impressora?</summary><p>Divida-o em partes de tamanho de cama com juntas usando a ferramenta de impressão Gigante gratuito, em seguida, cola ou cortar as peças juntos.</p></details>
+<h2>Mais calculadoras de impressão 3D</h2>
+<ul><li><a href="/filament-weight-length-calculator">Calculadora de peso e comprimento do filamento</a>: Converta gramas de filamento para metros e para trás para PLA, PETG, ABS, TPU, nylon e muito mais, a 1,75 ou 2,85 mm, com o custo do filamento.</li><li><a href="/filament-spool-remaining-calculator">Filamento deixado numa calculadora de carretel</a>: Pese o carretel e descubra quanto filamento resta, em gramas e metros, e se é suficiente para sua próxima impressão.</li></ul>
+</main>
+<footer><div class="w"><p><b>Ferramentas:</b> <a href="/stl-splitter">Impressão gigante</a><a href="/home-organization">Organização doméstica</a><a href="/drawer-organizer">Organizador de gavetas</a><a href="/drawer-mat-generator">Tapete sob medida para gavetas</a><a href="/tool-organizer">Organizador de ferramentas</a><a href="/wall-plate-generator">Placas de parede</a><a href="/pots-and-pans-drawer-organizer">Gaveta de panelas e frigideiras</a><a href="/refrigerator-organizer">Organizador de refrigeradores</a><a href="/picture-frame-maker">Fabricante de molduras de imagem</a><a href="/christmas-ornament-maker">Adornos de Natal</a><a href="/giant-christmas-bulb">Lâmpada de Natal gigante</a><a href="/lithophane-lampshade-generator">Gerador de lâmpadas</a><a href="/lightbox-letters">Letras da caixa de luz</a><a href="/lithophane-objects">Objetos de litofano</a><a href="/lithophane-maker">Produtor de litofane</a><a href="/shadow-lamp-generator">Lâmpada de som</a><a href="/bar-mat">Tapete de barras</a><a href="/custom-coasters">Copos personalizados</a><a href="/multicolor-3d-print-maker">Impressões multicoloridas</a><a href="/bubble-letter-generator">Letras de bolhas</a><a href="/box-maker">Gerador de caixas</a><a href="/grid-bin-generator">Caixas de rede de 42 mm</a><a href="/suspended-print">Impressão suspensa</a><a href="/mold-maker">Moldes de fabricação</a><a href="/relief-plaque-maker">Criador de placas de alívio</a><a href="/cookie-cutter-maker">Cortador de cookies</a><a href="/laser-cut-slicer">Cortador de laser</a><a href="/low-poly-generator">Gerador polido baixo</a><a href="/hollow-stl">Oco um STL</a><a href="/combine-stl">Combinar os arquivos STL</a><a href="/jigsaw-puzzle-maker">Quebra-cabeças</a><a href="/separate-stl-parts">Peças STL separadas</a><a href="/stl-repair">Reparação STL</a><a href="/trash-can-rim-generator">Gerador de jantes de lixo</a><a href="/cuban-link-necklace-generator">Colar de ligação cubano</a><a href="/qr-code-wifi-tag-maker">Marcas QR</a><a href="/sign-nameplate-maker">Sinais</a><a href="/keychain-pet-tag-maker">Chaveiros</a><a href="/heart-keychain-puzzle">Quebra-cabeças de chaveiro do coração</a><a href="/flex-name-generator">Nome Flex</a><a href="/filament-painting">Pintura de filamento</a><a href="/license-plate-frame-maker">Quadro da placa de licença</a><a href="/hex-storage-wall-planner">Parede de armazenamento Hex</a><a href="/geometric-wall-panels">Painéis de parede geométricos</a><a href="/vase-generator">Gerador de vasos</a><a href="/plant-pot-generator">Plantar a área de armazenamento e bandeja</a><a href="/custom-stamp-maker">Fabricante de carimbos personalizado</a><a href="/name-clicker-keychain-maker">Chaveiro de botão de nome</a><a href="/lighter-case-generator">Caixa mais leve</a><a href="/robot-arm-generator">Braço do robô</a><a href="/customize-your-pelican">Personalize seu Pelicano</a><a href="/phone-case-generator">Gerador de cases de telefone</a><a href="/cigarette-expander">Expansor de cigarros</a></p>
+<p><b>Colecções:</b> <a href="/tools">Todas as ferramentas</a><a href="/3d-print-gift-ideas">Ideias de presentes</a><a href="/3d-print-home-organization">Ferramentas de organização</a><a href="/photo-to-3d-print">Foto para impressão 3D</a><a href="/stl-tools">Ferramentas STL</a><a href="/3d-print-decor">Decoração</a><a href="/lamps">Estúdio de Lâmpadas</a><a href="/drawer-organizing">Organização de gavetas</a><a href="/drawer-organization-studio">Estúdio de Organização da Gaveta</a></p>
+<p><b>Calculadoras:</b> <a href="/filament-weight-length-calculator">Peso e comprimento do filamento</a><a href="/filament-spool-remaining-calculator">Filamento deixado em um carretel</a><a href="/3d-print-scale-calculator">Calculadora de escala</a><a href="/3d-printing-calculators">Todas as calculadoras</a></p>
+<p><b>Guias:</b> <a href="/guides/how-to-split-stl-for-3d-printing">Como dividir um STL</a><a href="/guides/print-bigger-than-build-plate">Imprimir maior que a sua impressora</a><a href="/guides/joints-for-split-3d-prints">Juntas para impressão em partes</a><a href="/guides/spiral-vase-mode-3d-printing">Modo vaso espiral</a><a href="/guides/42mm-grid-storage-bins">Caixas de rede de 42 mm</a><a href="/guides/3d-printed-christmas-ornaments">Adornos de Natal</a><a href="/guides">Todos os guias</a></p>
+
+
+<p>O Expressarte é executado no seu navegador. Os seus modelos e fotos são processados no seu dispositivo e nunca foram enviados.</p></div></footer>
+
+</body>
+</html>
