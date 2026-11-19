@@ -29,8 +29,8 @@ O REA 6.8.0 analisou os módulos públicos de organização e navegação de pas
 | Caminho | Conteúdo |
 | --- | --- |
 | `serve.py` | Servidor local com páginas públicas e API do administrador |
-| `admin_api.py` | Login restrito a dois e-mails e análise opcional da câmera por OpenAI ou Claude |
-| `public/expressarte-ai.js` | Entrada do administrador e aplicação da sugestão de câmera ao gerador |
+| `admin_api.py` | Contas, autorização de administrador, conversa local gratuita e IA externa opcional |
+| `public/expressarte-ai.js` | Robô presente em todas as páginas e envio das medidas ao gerador |
 | `public/index.html` | Página inicial, catálogo e editores embutidos |
 | `public/*/index.html`, `public/es/` | Páginas de ferramentas, documentação e versões em espanhol |
 | `public/js/` | Visualização WebGL, geradores, importação de arquivos 3D e exportação |
@@ -42,13 +42,15 @@ Os geradores processam os arquivos no navegador. Os formatos disponíveis variam
 
 A edição local inclui as calculadoras de escala, peso e comprimento do filamento. As rotas de preço e custo, a cobrança e as ferramentas identificadas como exclusivas para apoiadores foram excluídos do fluxo. Estimativas de tempo e de material usam dimensões, densidade, preenchimento e velocidade.
 
-## Administrador e análise opcional da capinha
+## Contas, robô e análise opcional da capinha
 
-O acesso de administrador aceita somente `relrysalves@gmail.com` e `relrys17@gmail.com`. Configure a senha **fora do repositório**: execute `python admin_api.py hash-password`, copie o hash retornado para a variável de ambiente `EXPRESSARTE_ADMIN_PASSWORD_HASH` e inicie `python serve.py`. Não envie a senha ou o hash ao GitHub. O botão de entrada fica no canto inferior esquerdo. Sessões duram 12 horas e as tentativas incorretas são limitadas.
+O acesso de administrador aceita somente `relrysalves@gmail.com` e `relrys17@gmail.com`. Configure as senhas **fora do repositório**: execute `python admin_api.py hash-password` para cada uma e atribua os hashes, respectivamente, a `EXPRESSARTE_ADMIN_HASH_RELRYSALVES` e `EXPRESSARTE_ADMIN_HASH_RELRYS17`. A variável antiga `EXPRESSARTE_ADMIN_PASSWORD_HASH` ainda funciona como alternativa compartilhada. Não envie as senhas ou hashes ao GitHub. Inicie com `python serve.py`. Sessões duram 12 horas; senhas devem ter ao menos 12 caracteres. Contas comuns são criadas no botão do robô e ficam em `expressarte-users.sqlite3`, fora do Git. E-mails de administrador são reservados e não podem ser cadastrados como conta comum.
 
-Na ferramenta de capinhas, a opção gratuita continua local: informe medidas, carregue a foto, use a sugestão geométrica e ajuste o recorte manualmente. Quem tiver uma chave própria pode pedir análise da foto pela OpenAI ou Anthropic sem fazer login. A chave pessoal é informada para uma única solicitação. A chave do proprietário pode ser configurada no servidor como `EXPRESSARTE_OPENAI_API_KEY` ou `EXPRESSARTE_ANTHROPIC_API_KEY` e é reservada aos administradores. A foto é enviada ao provedor escolhido apenas nessa ação. A resposta sugere o retângulo do módulo de câmera; a malha 3D e o STL continuam sendo gerados pelo motor local. Confira o recorte e a saliência antes de imprimir.
+O robô aparece em todas as páginas. Usuários com conta comum podem conversar no modo local gratuito, que interpreta dimensões informadas pelo usuário, verifica se estão em uma faixa plausível e oferece preencher o gerador de capinhas. **Esse modo não é um modelo de linguagem e não confirma medidas oficiais de fabricantes.** Quem informa uma chave própria pode obter respostas mais detalhadas da OpenAI ou Anthropic; a chave é enviada só na solicitação e não é salva. A API do proprietário, se configurada no servidor, é exclusiva para administradores. A conversa não tem permissão para alterar código ou publicar o site.
 
-O repositório Lovable `seamless-project-migration` foi comparado: ele usa autenticação Supabase e guarda uma chave pessoal no navegador/conta. Esta implementação usa servidor local e não salva chaves pessoais. **A prévia estática em Sites não executa `serve.py`; o botão de entrada e a análise por API só funcionam em hospedagem com Python.** Para oferecer acesso de administrador na prévia pública/privada, será necessário migrar a hospedagem para um serviço com backend ou integrar um backend externo. Não publique uma interface de login que aparente funcionar sem esse servidor.
+Na ferramenta de capinhas, a opção gratuita continua local: informe medidas, carregue a foto, use a sugestão geométrica e ajuste o recorte manualmente. A foto e a saliência da câmera ainda devem ser conferidas no gerador. A malha 3D e o STL continuam sendo gerados pelo motor local.
+
+O repositório Lovable `seamless-project-migration` foi comparado: ele usa autenticação Supabase e guarda uma chave pessoal no navegador/conta. Esta implementação usa servidor local e não salva chaves pessoais. **A prévia estática em Sites não executa `serve.py`; cadastro, login e conversa só funcionam em hospedagem com Python.** Para oferecer esses recursos na prévia pública/privada, será necessário migrar a hospedagem para um serviço com backend ou integrar um backend externo. O banco SQLite precisa de armazenamento persistente e cópia de segurança na futura hospedagem.
 
 ## Referências da implementação
 

@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+expressarte-users.sqlite3
+expressarte-users.sqlite3-*
+.env

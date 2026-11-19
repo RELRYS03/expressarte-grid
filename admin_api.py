@@ -8,16 +8,34 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
+import sqlite3
 import time
 import urllib.error
 import urllib.request
 from http.cookies import SimpleCookie
 
 ADMIN_EMAILS = {"relrysalves@gmail.com", "relrys17@gmail.com"}
+ADMIN_HASH_ENV = {"relrysalves@gmail.com": "EXPRESSARTE_ADMIN_HASH_RELRYSALVES", "relrys17@gmail.com": "EXPRESSARTE_ADMIN_HASH_RELRYS17"}
 SESSIONS = {}
 ATTEMPTS = {}
 MAX_BODY = 6 * 1024 * 1024
+
+
+def database():
+    path = os.environ.get("EXPRESSARTE_DB_PATH", os.path.join(os.path.dirname(__file__), "expressarte-users.sqlite3"))
+    db = sqlite3.connect(path, timeout=5)
+    db.execute("CREATE TABLE IF NOT EXISTS users (email TEXT PRIMARY KEY, password_hash TEXT NOT NULL, created_at INTEGER NOT NULL)")
+    return db
+
+
+def valid_email(value):
+    return isinstance(value, str) and len(value) <= 254 and re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", value) is not None
+
+
+def admin_hash(email):
+    return os.environ.get(ADMIN_HASH_ENV[email], "") or os.environ.get("EXPRESSARTE_ADMIN_PASSWORD_HASH", "")
 
 
 def password_hash(password):
@@ -58,7 +76,7 @@ def send_json(handler, status, value, cookie=None):
     handler.wfile.write(body)
 
 
-def session_email(handler):
+def session_identity(handler):
     cookie = SimpleCookie()
     try:
         cookie.load(handler.headers.get("Cookie", ""))
@@ -72,6 +90,11 @@ def session_email(handler):
     return entry[0]
 
 
+def session_email(handler):
+    identity = session_identity(handler)
+    return identity[0] if identity else None
+
+
 def same_origin(handler):
     origin = handler.headers.get("Origin")
     host = handler.headers.get("Host", "")
@@ -81,13 +104,13 @@ def same_origin(handler):
 def handle_get(handler):
     if handler.path != "/api/session":
         return False
-    email = session_email(handler)
-    send_json(handler, 200, {"authenticated": bool(email), "email": email})
+    identity = session_identity(handler)
+    send_json(handler, 200, {"authenticated": bool(identity), "email": identity[0] if identity else None, "admin": bool(identity and identity[1])})
     return True
 
 
 def handle_post(handler):
-    if handler.path not in ("/api/login", "/api/logout", "/api/vision"):
+    if handler.path not in ("/api/login", "/api/signup", "/api/logout", "/api/vision", "/api/chat"):
         return False
     if not same_origin(handler):
         send_json(handler, 403, {"error": "Origem não permitida."})
@@ -97,7 +120,7 @@ def handle_post(handler):
     except (ValueError, json.JSONDecodeError):
         send_json(handler, 400, {"error": "Dados inválidos."})
         return True
-    if handler.path == "/api/login":
+    if handler.path in ("/api/login", "/api/signup"):
         ip = handler.client_address[0]
         recent = [t for t in ATTEMPTS.get(ip, []) if time.time() - t < 900]
         if len(recent) >= 8:
@@ -105,17 +128,37 @@ def handle_post(handler):
             return True
         email = str(data.get("email", "")).strip().lower()
         password = str(data.get("password", ""))
-        encoded = os.environ.get("EXPRESSARTE_ADMIN_PASSWORD_HASH", "")
-        if email not in ADMIN_EMAILS or not encoded or not password_valid(password, encoded):
-            recent.append(time.time())
-            ATTEMPTS[ip] = recent
-            send_json(handler, 401, {"error": "E-mail ou senha inválidos."})
+        if not valid_email(email) or len(password) < 12 or len(password) > 256:
+            send_json(handler, 400, {"error": "Informe um e-mail válido e uma senha de 12 a 256 caracteres."})
             return True
+        is_admin = email in ADMIN_EMAILS
+        if handler.path == "/api/signup":
+            if is_admin:
+                send_json(handler, 403, {"error": "Conta de administrador reservada. Configure a senha fora do site."})
+                return True
+            try:
+                with database() as db:
+                    db.execute("INSERT INTO users(email,password_hash,created_at) VALUES(?,?,?)", (email, password_hash(password), int(time.time())))
+            except sqlite3.IntegrityError:
+                send_json(handler, 409, {"error": "Este e-mail já possui cadastro."})
+                return True
+        else:
+            if is_admin:
+                encoded = admin_hash(email)
+            else:
+                with database() as db:
+                    row = db.execute("SELECT password_hash FROM users WHERE email=?", (email,)).fetchone()
+                encoded = row[0] if row else ""
+            if not encoded or not password_valid(password, encoded):
+                recent.append(time.time())
+                ATTEMPTS[ip] = recent
+                send_json(handler, 401, {"error": "E-mail ou senha inválidos."})
+                return True
         ATTEMPTS.pop(ip, None)
         sid = secrets.token_urlsafe(32)
-        SESSIONS[sid] = (email, time.time() + 12 * 3600)
+        SESSIONS[sid] = ((email, is_admin), time.time() + 12 * 3600)
         secure = "; Secure" if handler.headers.get("X-Forwarded-Proto") == "https" else ""
-        send_json(handler, 200, {"email": email}, "expressarte_session=" + sid + "; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200" + secure)
+        send_json(handler, 200, {"email": email, "admin": is_admin}, "expressarte_session=" + sid + "; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200" + secure)
         return True
     if handler.path == "/api/logout":
         cookie = SimpleCookie()
@@ -124,17 +167,103 @@ def handle_post(handler):
             SESSIONS.pop(cookie["expressarte_session"].value, None)
         send_json(handler, 200, {"ok": True}, "expressarte_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0")
         return True
-    if not session_email(handler) and not data.get("key"):
+    if handler.path == "/api/chat":
+        if not session_identity(handler):
+            send_json(handler, 401, {"error": "Entre ou crie uma conta para conversar com o robô."})
+        else:
+            send_chat(handler, data)
+        return True
+    if not session_identity(handler) and not data.get("key"):
         send_json(handler, 401, {"error": "Entre como administrador ou informe sua própria chave de API."})
         return True
     send_vision(handler, data)
     return True
 
 
+def parse_phone(message):
+    """Extract supplied dimensions, never invent a phone model specification."""
+    text = message.lower().replace(",", ".")
+    measure = re.search(r"(\d{2,3}(?:\.\d+)?)\s*[×xX*]\s*(\d{2,3}(?:\.\d+)?)\s*[×xX*]\s*(\d{1,2}(?:\.\d+)?)\s*(mm|cm)?", text)
+    if not measure:
+        return None
+    length, width, thickness = map(float, measure.group(1, 2, 3))
+    if measure.group(4) == "cm":
+        length, width, thickness = length * 10, width * 10, thickness * 10
+    if not (50 <= length <= 240 and 35 <= width <= 190 and 3 <= thickness <= 25):
+        return None
+    name = re.search(r"(?:iphone|galaxy|pixel|xiaomi|pocophone|poco|redmi|motorola|moto|realme|oneplus)[\w\s+-]{0,35}", message[:measure.start()], re.I)
+    return {"name": name.group(0).strip() if name else "Meu celular", "L": round(length, 2), "W": round(width, 2), "T": round(thickness, 2)}
+
+
+def free_reply(message, spec):
+    if spec:
+        return (f"Li altura {spec['L']} mm, largura {spec['W']} mm e espessura {spec['T']} mm para {spec['name']}. "
+                "As medidas estão na faixa plausível para um celular, mas não posso confirmar o modelo do fabricante sem uma fonte confiável. "
+                "Abra o gerador com esses valores. Para o recorte da câmera, envie uma foto reta da traseira e confira posição, largura, altura e saliência antes de imprimir.")
+    if re.search(r"capinha|capa|celular|iphone|galaxy|poco|xiaomi|câmera|camera", message, re.I):
+        return ("Posso preparar uma capinha. Envie as medidas do corpo do celular na ordem altura × largura × espessura, em mm, "
+                "por exemplo: 162,9 × 76,6 × 8,2 mm. Para a ilha de câmeras, use também uma foto reta da traseira; "
+                "a foto sozinha não garante escala física.")
+    return ("Posso ajudar com as ferramentas de impressão 3D do Expressarte. Conte o que quer criar e quais medidas já tem. "
+            "Se for uma capinha, informe altura × largura × espessura do celular em mm. "
+            "O modo gratuito orienta e verifica a faixa das medidas informadas; uma chave própria permite uma resposta de IA mais detalhada.")
+
+
+def provider_reply(provider, key, message):
+    instructions = ("Você é o assistente Expressarte, em português brasileiro. Ajude o usuário com impressão 3D e capinhas. "
+                    "Não afirme que conhece medidas oficiais sem fonte. Não invente dimensões. Peça altura, largura e espessura "
+                    "em milímetros e, para câmeras, foto reta da traseira e medidas físicas. Seja objetivo. "
+                    "Não execute nem prometa editar o site ou gerar STL diretamente; o gerador local faz isso.")
+    if provider == "openai":
+        url = "https://api.openai.com/v1/chat/completions"
+        payload = {"model": "gpt-4o-mini", "messages": [{"role": "system", "content": instructions}, {"role": "user", "content": message}], "max_tokens": 500}
+        headers = {"Authorization": "Bearer " + key}
+    elif provider == "anthropic":
+        url = "https://api.anthropic.com/v1/messages"
+        payload = {"model": "claude-sonnet-4-5", "max_tokens": 500, "system": instructions, "messages": [{"role": "user", "content": message}]}
+        headers = {"x-api-key": key, "anthropic-version": "2023-06-01"}
+    else:
+        raise ValueError("Provedor inválido.")
+    req = urllib.request.Request(url, data=json.dumps(payload).encode(), headers={**headers, "Content-Type": "application/json"}, method="POST")
+    with urllib.request.urlopen(req, timeout=35) as response:
+        result = json.load(response)
+    return result["choices"][0]["message"]["content"] if provider == "openai" else result["content"][0]["text"]
+
+
+def send_chat(handler, data):
+    message = data.get("message", "")
+    if not isinstance(message, str) or not 1 <= len(message.strip()) <= 2000:
+        send_json(handler, 400, {"error": "Escreva uma mensagem de até 2.000 caracteres."})
+        return
+    spec = parse_phone(message)
+    reply = free_reply(message, spec)
+    provider = data.get("provider")
+    supplied_key = data.get("key", "")
+    if not isinstance(supplied_key, str) or len(supplied_key) > 300 or (supplied_key and provider not in ("openai", "anthropic")):
+        send_json(handler, 400, {"error": "Chave ou provedor inválido."})
+        return
+    identity = session_identity(handler)
+    key = supplied_key or (os.environ.get("EXPRESSARTE_" + str(provider).upper() + "_API_KEY", "") if identity and identity[1] and provider in ("openai", "anthropic") else "")
+    mode = "local"
+    if key:
+        try:
+            reply = provider_reply(provider, key, message)
+            mode = provider
+        except (urllib.error.URLError, KeyError, ValueError, json.JSONDecodeError):
+            send_json(handler, 502, {"error": "A IA externa não respondeu. Confira a chave ou use o modo gratuito."})
+            return
+    send_json(handler, 200, {"reply": reply, "phone": spec, "mode": mode})
+
+
 def send_vision(handler, data):
     provider = data.get("provider")
     image = data.get("image", "")
-    key = data.get("key") or os.environ.get("EXPRESSARTE_" + str(provider).upper() + "_API_KEY", "")
+    supplied_key = data.get("key", "")
+    if not isinstance(supplied_key, str) or len(supplied_key) > 300:
+        send_json(handler, 400, {"error": "Chave inválida."})
+        return
+    identity = session_identity(handler)
+    key = supplied_key or (os.environ.get("EXPRESSARTE_" + str(provider).upper() + "_API_KEY", "") if identity and identity[1] and provider in ("openai", "anthropic") else "")
     if provider not in ("openai", "anthropic") or not isinstance(key, str) or not key:
         send_json(handler, 400, {"error": "Escolha um provedor e informe uma chave de API válida."})
         return
