@@ -37,7 +37,7 @@ jobs:
           import re
 
           base = "/expressarte-grid"
-          quoted_root = re.compile(r"""(["'`])/(?!/|api/|expressarte-grid/)([^"'`\\s]*)""")
+          quoted_root = re.compile(r"""(["'`])/(?!/|api/|expressarte-grid/)([^"'`\s]*)""")
           css_root = re.compile(r"""url\((\s*["']?)/(?!/|expressarte-grid/)""", re.IGNORECASE)
 
           text_extensions = {
