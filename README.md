@@ -37,6 +37,7 @@ O REA 6.8.0 analisou os módulos públicos de organização e navegação de pas
 | `public/local-feedback.js` | Formulário de sugestões com validação e armazenamento no navegador |
 | `public/img/`, `public/video/` | Imagens e vídeos das ferramentas |
 | `public/THIRD_PARTY_NOTICES.txt` | Avisos das dependências da referência |
+| `cloudflare/worker.js`, `cloudflare/schema.sql`, `wrangler.toml` | Versão preparada para hospedagem gratuita na Cloudflare |
 
 Os geradores processam os arquivos no navegador. Os formatos disponíveis variam por ferramenta e incluem STL, OBJ e 3MF como entrada, além de STL, 3MF, ZIP, SVG, DXF e PDF como saída. Sugestões ficam no armazenamento local do navegador. O catálogo usa a seleção inicial de ferramentas populares em vez de consultar estatísticas remotas.
 
@@ -50,7 +51,9 @@ O robô aparece em todas as páginas. Usuários com conta comum podem conversar 
 
 Na ferramenta de capinhas, a opção gratuita continua local: informe medidas, carregue a foto, use a sugestão geométrica e ajuste o recorte manualmente. A foto e a saliência da câmera ainda devem ser conferidas no gerador. A malha 3D e o STL continuam sendo gerados pelo motor local.
 
-O repositório Lovable `seamless-project-migration` foi comparado: ele usa autenticação Supabase e guarda uma chave pessoal no navegador/conta. Esta implementação usa servidor local e não salva chaves pessoais. **A prévia estática em Sites não executa `serve.py`; cadastro, login e conversa só funcionam em hospedagem com Python.** Para oferecer esses recursos na prévia pública/privada, será necessário migrar a hospedagem para um serviço com backend ou integrar um backend externo. O banco SQLite precisa de armazenamento persistente e cópia de segurança na futura hospedagem.
+O repositório Lovable `seamless-project-migration` foi comparado: ele usa autenticação Supabase e guarda uma chave pessoal no navegador/conta. Esta implementação não salva chaves pessoais. **A prévia estática atual em Sites não executa `serve.py`; cadastro, login e conversa precisam do servidor Python local ou da versão Cloudflare.** O banco SQLite da versão Python precisa de armazenamento persistente e cópia de segurança caso ela seja hospedada.
+
+Também está preparada a versão [Cloudflare](cloudflare/README.md), que usa Workers + D1 + Workers AI sem depender do servidor Python ou do SQLite. Ela foi testada localmente, mas a publicação remota depende de autenticar a conta Cloudflare do proprietário, criar o D1 e configurar as duas senhas como segredos.
 
 ## Referências da implementação
 

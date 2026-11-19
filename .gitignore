@@ -3,3 +3,5 @@ __pycache__/
 expressarte-users.sqlite3
 expressarte-users.sqlite3-*
 .env
+.dev.vars
+.wrangler/
