@@ -14336,7 +14336,7 @@ function pcCustomDevice() {
   });
   return { id: 'custom', brand: 'custom', name: $('pcCustomName').value.trim() || 'Celular personalizado',
     L, W, T, corner: { e: corner, n: 2 }, edge: { back: 0.8, front: 0.8 }, buttons,
-    camera: { parts: [{ t: 'r', x0: x, y0: y, x1: x + w, y1: y + h, r, full: false }], plateau: bump, bump },
+    camera: { parts: [{ t: 'r', x0: x, y0: y, x1: x + w, y1: y + h, r, full: $('pcWideCamera').checked }], plateau: bump, bump },
     bottom: { usb: { x: portX, w: portW, h: portH } }, est: [] };
 }
 
@@ -14362,7 +14362,7 @@ $('pcCustomApply').onclick = () => {
 
 (function pcReferenceEditor() {
   const canvas = $('pcReferenceCanvas'), ctx = canvas.getContext('2d');
-  let image, body, camera, start, draft, mode = 'body', loading = 0;
+  let image, pixels, body, camera, start, draft, mode = 'body', loading = 0;
   const choose = value => {
     mode = value;
     $('pcMarkBody').setAttribute('aria-pressed', String(value === 'body'));
@@ -14371,7 +14371,11 @@ $('pcCustomApply').onclick = () => {
   const redraw = () => {
     if (!image) return;
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-    for (const [rect, color] of [[body, '#48e1a0'], [camera, '#ffbe58'], [draft, '#fff']]) {
+    const W = $('pcCustomW').valueAsNumber, L = $('pcCustomL').valueAsNumber;
+    const [x, y, w, h] = ['X', 'Y', 'CW', 'CH'].map(key => $('pcCustom' + key).valueAsNumber);
+    const cut = body && camera && W > 0 && L > 0 && [x,y,w,h].every(Number.isFinite)
+      ? {x: body.x + x * body.w / W, y: body.y + y * body.h / L, w: w * body.w / W, h: h * body.h / L} : camera;
+    for (const [rect, color] of [[body, '#48e1a0'], [cut, '#ffbe58'], [draft, '#fff']]) {
       if (!rect) continue;
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
@@ -14384,6 +14388,56 @@ $('pcCustomApply').onclick = () => {
       y: Math.max(0, Math.min(canvas.height, (e.clientY - r.top) * canvas.height / r.height)) };
   };
   const box = (a,b) => ({ x: Math.min(a.x,b.x), y: Math.min(a.y,b.y), w: Math.abs(a.x-b.x), h: Math.abs(a.y-b.y) });
+  function locatePhone() {
+    // A straight product photo on a solid background has a foreground run in
+    // both the central rows and columns. Ignore isolated edge pixels and shadows.
+    const { width: w, height: h, data } = pixels;
+    const corners = [[0,0], [w-1,0], [0,h-1], [w-1,h-1]].map(([x,y]) => data.slice((y*w+x)*4,(y*w+x)*4+4));
+    const bg = corners[0];
+    if (corners.some(c => Math.max(...[0,1,2,3].map(i => Math.abs(c[i]-bg[i]))) > 28)) return null;
+    function foreground(x,y) {
+      const i=(y*w+x)*4;
+      return bg[3]<40 ? data[i+3]>180 : data[i+3]>100 && Math.max(...[0,1,2].map(c => Math.abs(data[i+c]-bg[c])))>42;
+    }
+    function span(n,m,at) {
+      const picked = [];
+      for(let a=0;a<n;a++) {
+        let hits=0;
+        for(let j=2;j<=8;j++) if(at(a,Math.floor(j*m/10))) hits++;
+        if(hits>=4) picked.push(a);
+      }
+      return picked.length > n*.3 ? [picked[0],picked.at(-1)+1] : null;
+    }
+    const xs=span(w,h,foreground), ys=span(h,w,(y,x)=>foreground(x,y));
+    if(!xs||!ys||xs[0]===0||xs[1]===w||ys[0]===0||ys[1]===h) return null;
+    return {x:xs[0], y:ys[0], w:xs[1]-xs[0], h:ys[1]-ys[0]};
+  }
+  function suggestCamera() {
+    if (!body) { pcCustomStatus('Marque o contorno do celular primeiro.'); return; }
+    // Look for the lower edge of a broad camera island near the top. A weak or
+    // localized edge (individual lenses or a busy photo) requires a manual box.
+    const { data, width } = pixels;
+    const lum = (x,y) => { const i=(y*width+x)*4; return .30*data[i]+.59*data[i+1]+.11*data[i+2]; };
+    const step=Math.max(2, Math.round(body.h*.008));
+    let best = null;
+    for(let y=Math.ceil(body.y+body.h*.12); y<body.y+body.h*.42; y++) {
+      let hits=0, first=-1, last=-1;
+      for(let i=1;i<20;i++) {
+        const x=Math.round(body.x+body.w*i/20);
+        if(Math.abs(lum(x,y-step)-lum(x,y+step))<13) continue;
+        if(first<0) first=i;
+        last=i; hits++;
+      }
+      if(hits>=10 && (!best||hits>best.hits)) best={y,first,last,hits};
+    }
+    if(!best) { pcCustomStatus('Não encontrei uma ilha larga com nitidez. Clique em Marcar módulo inteiro e arraste sobre a foto.'); return; }
+    const padding = body.w*.025;
+    const x = Math.max(body.x + padding, body.x + body.w*(best.first-1)/20);
+    const right = Math.min(body.x + body.w - padding, body.x + body.w*(best.last+1)/20);
+    const y = body.y + Math.max(body.h*.025, padding);
+    camera={x, y, w:right-x, h:best.y+step-y};
+    choose('camera'); applyCamera(); redraw();
+  }
   function applyCamera() {
     if (!body || !camera) return;
     const W = $('pcCustomW').valueAsNumber, L = $('pcCustomL').valueAsNumber;
@@ -14393,6 +14447,7 @@ $('pcCustomApply').onclick = () => {
       pcCustomStatus('Marque a câmera dentro do retângulo do celular, deixando 1 mm até as bordas.'); return;
     }
     ['X','Y','CW','CH'].forEach((key,i) => { $('pcCustom'+key).value = Number(values[i].toFixed(2)); });
+    $('pcWideCamera').checked = values[2] / W >= 0.75;
     $('pcCustomCR').value = Math.min($('pcCustomCR').valueAsNumber || 0, Math.floor(Math.min(values[2],values[3])*5)/10);
     pcSchedule(true);
   }
@@ -14408,12 +14463,19 @@ $('pcCustomApply').onclick = () => {
       canvas.width = Math.max(1, Math.round(img.width * scale));
       canvas.height = Math.max(1, Math.round(img.height * scale));
       $('pcReferenceTools').hidden = false;
-      choose('body'); redraw(); pcCustomStatus('Arraste sobre a foto para marcar o contorno completo do celular.');
+      redraw();
+      pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      body = locatePhone();
+      choose(body ? 'camera' : 'body'); redraw();
+      pcCustomStatus(body ? 'Contorno sugerido em verde. Confira e marque a ilha inteira ou use Sugerir módulo pela foto.'
+        : 'Arraste sobre a foto para marcar o contorno completo do celular.');
     } catch (e) { if (job === loading) pcCustomStatus('Não foi possível abrir a foto. Use PNG, JPG ou WebP.'); }
     finally { URL.revokeObjectURL(url); }
   };
   $('pcMarkBody').onclick = () => choose('body');
   $('pcMarkCamera').onclick = () => choose('camera');
+  $('pcSuggestCamera').onclick = suggestCamera;
+  $('pcCustom').addEventListener('input', redraw);
   canvas.onpointerdown = e => {
     if (!image || !e.isPrimary) return;
     if (mode === 'camera' && !body) { pcCustomStatus('Marque o contorno do celular primeiro.'); return; }

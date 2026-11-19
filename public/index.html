@@ -5370,13 +5370,14 @@ Olivia</textarea></label>
           <label class="f">Raio dos cantos (mm)<input id="pcCustomR" type="number" min="1" max="30" step="0.1" value="7"></label>
         </div>
         <details class="pp" open><summary>Foto da traseira e recorte da câmera</summary><div class="pp-b">
-          <p class="note">Use uma foto reta, com o celular inteiro visível. Marque o contorno do aparelho e depois o do módulo da câmera. A escala vem das medidas acima. Para aplicar uma foto como relevo, use a seção de imagem do desenho.</p>
+          <p class="note">Use uma foto de frente da traseira, com o aparelho inteiro e um fundo liso. Confira o contorno verde e marque a ilha inteira, incluindo câmeras e flash. A escala vem das medidas do aparelho. Meça a saliência separadamente.</p>
           <label class="f">Foto de referência<input type="file" id="pcReference" accept="image/png,image/jpeg,image/webp"></label>
           <div id="pcReferenceTools" hidden>
-            <div class="row"><button type="button" id="pcMarkBody">Marcar celular</button><button type="button" id="pcMarkCamera">Marcar câmera</button></div>
+            <div class="row"><button type="button" id="pcMarkBody">Marcar celular</button><button type="button" id="pcMarkCamera">Marcar módulo inteiro</button><button type="button" id="pcSuggestCamera">Sugerir módulo pela foto</button></div>
             <canvas id="pcReferenceCanvas" width="320" height="240" aria-label="Foto usada para marcar o celular e a câmera" style="display:block;width:100%;height:auto;touch-action:none;cursor:crosshair"></canvas>
           </div>
-          <small class="note">Distâncias medidas da esquerda e do topo, olhando a traseira.</small>
+          <small class="note">Verde: corpo do celular. Dourado: recorte calibrado. Distâncias medidas da esquerda e do topo, olhando a traseira.</small>
+          <label class="check"><input type="checkbox" id="pcWideCamera">Módulo largo, próximo às bordas</label>
           <div class="grid2">
             <label class="f">Esquerda (mm)<input id="pcCustomX" type="number" min="1" step="0.1" value="4"></label>
             <label class="f">Topo (mm)<input id="pcCustomY" type="number" min="1" step="0.1" value="4"></label>
