@@ -12,4 +12,4 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "expressarte-grid"
-database_id = "00000000-0000-0000-0000-000000000000" # Preencher após criar D1 na sua conta.
+database_id = "00000000-0000-0000-0000-000000000000" # Substituído automaticamente na publicação pelo GitHub Actions.

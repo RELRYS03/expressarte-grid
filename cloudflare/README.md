@@ -6,9 +6,13 @@ Este diretório prepara o Expressarte Grid para Cloudflare Workers (API e arquiv
 
 `wrangler deploy --dry-run` e `wrangler dev --local` foram executados com sucesso. A versão local foi testada com cadastro de visitante, login, acesso reservado de administrador, conversa e preenchimento da capinha. **A conta Cloudflare ainda não está autenticada neste ambiente e o D1 remoto ainda não foi criado.** O UUID em `wrangler.toml` é apenas um marcador para testes locais.
 
+Para publicar sem compartilhar credenciais no chat, existe o fluxo manual em `.github/workflows/deploy-cloudflare.yml`. Ele cria o D1 (se necessário), cria as tabelas, configura os hashes dos administradores e publica o Worker. Ele só roda quando o proprietário aciona **Actions → Publicar Expressarte na Cloudflare → Run workflow**.
+
+Antes de acioná-lo, configure quatro segredos no repositório GitHub (`Settings → Secrets and variables → Actions`): `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ADMIN_HASH_RELRYSALVES` e `ADMIN_HASH_RELRYS17`. O ID da conta aparece no endereço do painel Cloudflare. Para gerar os dois hashes sem mostrar senhas no terminal, execute `python cloudflare/hash-password.py` duas vezes. Os hashes são diferentes e correspondem aos dois e-mails reservados. Nunca envie senhas, hashes ou token no chat.
+
 ## Configuração na conta do proprietário
 
-1. Entre na conta Cloudflare e autorize o Wrangler (`npx wrangler login`). Nunca envie token de API ou senha no chat.
+1. Entre na conta Cloudflare e autorize o Wrangler (`npx wrangler login`). Nunca envie token de API ou senha no chat. Como alternativa, use o fluxo do GitHub Actions acima.
 2. Na raiz do projeto, execute `npx wrangler d1 create expressarte-grid`. Substitua o `database_id` em `wrangler.toml` pelo UUID retornado.
 3. Execute `npx wrangler d1 execute expressarte-grid --remote --file=cloudflare/schema.sql` para criar as tabelas.
 4. Gere duas senhas diferentes, cada uma com ao menos 12 caracteres, rodando `python cloudflare/hash-password.py` duas vezes. Salve cada hash como segredo com `npx wrangler secret put ADMIN_HASH_RELRYSALVES` e `npx wrangler secret put ADMIN_HASH_RELRYS17`. A senha digitada não aparece no terminal. Não coloque senhas nem hashes em arquivos versionados.
